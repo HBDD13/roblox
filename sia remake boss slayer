@@ -1,0 +1,45 @@
+local configs = {
+	Key = Enum.KeyCode.M,
+	Kill_Players = false -- THIS IS CLIENT SIDED ONLY, MEANING IT WILL NOT KILL THE PLAYER FOR EVERYONE
+}
+
+
+
+
+
+
+
+
+
+
+local uis = game:GetService("UserInputService")
+local plr = game:GetService("Players").LocalPlayer
+local mouse = plr:GetMouse()
+
+-- ignore cuz its so u can run the script multiple times without bugging or something
+if _G["eoiarsjmtgyoipeasrjmy"] then
+	_G.eoiarsjmtgyoipeasrjmy:Destroy()
+end
+_G.sporegwkoesyhtetyhnui = configs.Key
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+local focus = nil
+uis.TextBoxFocused:Connect(function (box)
+	focus = box
+end)
+uis.TextBoxFocusReleased:Connect(function ()
+	focus = nil
+end)
+
+uis.InputBegan:Connect(function (input, proc)
+	local key = input and input.KeyCode or nil
+	if key == configs.Key and not proc then
+		local targ = mouse.Target
+		local hum = targ and targ.Parent and targ.Parent:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.Health = 0
+			hum.Parent:BreakJoints()
+		end
+	end
+end)
+
