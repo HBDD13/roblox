@@ -13,7 +13,8 @@ local configs = {
 
 
 local uis = game:GetService("UserInputService")
-local plr = game:GetService("Players").LocalPlayer
+local players = game:GetService("Players")
+local plr = players.LocalPlayer
 local mouse = plr:GetMouse()
 
 -- ignore cuz its so u can run the script multiple times without bugging or something
@@ -36,10 +37,9 @@ uis.InputBegan:Connect(function (input, proc)
 	if key == configs.Key and not proc then
 		local targ = mouse.Target
 		local hum = targ and targ.Parent and targ.Parent:FindFirstChildOfClass("Humanoid")
-		if hum then
+		if hum and not players:GetPlayerFromCharacter(hum.Parent) then
 			hum.Health = 0
 			hum.Parent:BreakJoints()
 		end
 	end
 end)
-
