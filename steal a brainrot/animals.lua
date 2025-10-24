@@ -1640,11 +1640,6 @@ module["Los Lucky Blocks"] = {
 	LuckyBlock = LuckyBlocks["Los Lucky Blocks"];
 	HideFromIndex = true;
 }
-if game:GetService("RunService"):IsServer() then
-	for i, v in require(game:GetService("ServerStorage").Modules.ServerRoadWeights), nil do
-		if module[i] then
-			module[i].RoadWeight = v
-		end
-	end
+return function ()
+	return module
 end
-return module
