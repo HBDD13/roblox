@@ -103,10 +103,12 @@ TextLabel.TextYAlignment = Enum.TextYAlignment.Top
 --------------
 
 ClickSound.Name = "ClickSound"
+ClickSound.Parent = game.CoreGui
 ClickSound.SoundId = "rbxassetid://88442833509532"
 ClickSound.Volume = 0.5
 
 HoverSound.Name = "HoverSound"
+HoverSound.Parent = game.CoreGui
 HoverSound.SoundId = "rbxassetid://139800881181209"
 HoverSound.Volume = 0.5
 
