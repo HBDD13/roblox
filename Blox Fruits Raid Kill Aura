@@ -1,5 +1,6 @@
 local players = game:GetService("Players")
 local ts = game:GetService("TweenService")
+local debris = game:GetService("Debris")
 
 local plr = players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
@@ -102,12 +103,10 @@ TextLabel.TextYAlignment = Enum.TextYAlignment.Top
 --
 
 ClickSound.Name = "ClickSound"
-ClickSound.Parent = Coolkidds1
 ClickSound.SoundId = "rbxassetid://88442833509532"
 ClickSound.Volume = 0.5
 
 HoverSound.Name = "HoverSound"
-HoverSound.Parent = Coolkidds1
 HoverSound.SoundId = "rbxassetid://139800881181209"
 HoverSound.Volume = 0.5
 
@@ -142,4 +141,6 @@ function Stop()
 	chatConnection:Disconnect()
 	Coolkidds1:Destroy()
 	stopped = true
+	debris:AddItem(ClickSound, 1)
+	debris:AddItem(HoverSound, 1)
 end
