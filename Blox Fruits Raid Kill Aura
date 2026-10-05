@@ -8,45 +8,6 @@ local char = plr.Character or plr.CharacterAdded:Wait()
 local killRange = 500
 local stopped = false
 
-task.spawn(function ()
-	while task.wait(0.5) and not stopped do
-		char = plr.Character or plr.CharacterAdded:Wait()
-
-		local rootPart = char:FindFirstChild("HumanoidRootPart")
-
-		if not rootPart then
-			continue
-		end
-
-		local hits = workspace:GetPartBoundsInRadius(rootPart.Position, killRange)
-
-		for _, h in hits do
-			if not h.Parent then
-				continue
-			end
-
-			local hitCharacter = h:FindFirstAncestorOfClass("Model")
-
-			if not hitCharacter then
-				continue
-			end
-
-			if hitCharacter:GetAttribute("NPCReady") ~= nil or hitCharacter:GetAttribute("NPCLoaded") ~= nil or players:GetPlayerFromCharacter(hitCharacter) then
-				continue
-			end
-
-			local hum = hitCharacter:FindFirstChildOfClass("Humanoid")
-
-			if not hum then
-				continue
-			end
-
-			hum.Health = 0
-			hitCharacter:BreakJoints()
-		end
-	end
-end)
-
 ----------------------------------------------------------------------------------------
 
 -- Instances:
@@ -147,3 +108,50 @@ function Stop()
 	debris:AddItem(ClickSound, 1)
 	debris:AddItem(HoverSound, 1)
 end
+
+
+
+task.spawn(function ()
+	while task.wait(0.5) and not stopped do
+		if not Coolkidds1 or not Coolkidds1.Parent then
+			stopped = true
+			return
+		end
+		char = plr.Character or plr.CharacterAdded:Wait()
+
+		local rootPart = char:FindFirstChild("HumanoidRootPart")
+
+		if not rootPart then
+			continue
+		end
+
+		local hits = workspace:GetPartBoundsInRadius(rootPart.Position, killRange)
+
+		for _, h in hits do
+			if not h.Parent then
+				continue
+			end
+
+			local hitCharacter = h:FindFirstAncestorOfClass("Model")
+
+			if not hitCharacter then
+				continue
+			end
+
+			if hitCharacter:GetAttribute("NPCReady") ~= nil or hitCharacter:GetAttribute("NPCLoaded") ~= nil or players:GetPlayerFromCharacter(hitCharacter) then
+				continue
+			end
+
+			local hum = hitCharacter:FindFirstChildOfClass("Humanoid")
+
+			if not hum then
+				continue
+			end
+
+			hum.Health = 0
+			hitCharacter:BreakJoints()
+		end
+	end
+end)
+
+return Coolkidds1
