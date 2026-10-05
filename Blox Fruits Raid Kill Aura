@@ -31,7 +31,7 @@ task.spawn(function ()
 				continue
 			end
 
-			if players:GetPlayerFromCharacter(hitCharacter) then
+			if hitCharacter:GetAttribute("NPCReady") ~= nil or hitCharacter:GetAttribute("NPCLoaded") ~= nil or players:GetPlayerFromCharacter(hitCharacter) then
 				continue
 			end
 
