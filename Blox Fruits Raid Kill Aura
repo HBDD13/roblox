@@ -1,0 +1,145 @@
+local players = game:GetService("Players")
+local ts = game:GetService("TweenService")
+
+local plr = players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+
+local killRange = 500
+local stopped = false
+
+task.spawn(function ()
+	while task.wait(0.5) and not stopped do
+		char = plr.Character or plr.CharacterAdded:Wait()
+
+		local rootPart = char:FindFirstChild("HumanoidRootPart")
+
+		if not rootPart then
+			continue
+		end
+
+		local hits = workspace:GetPartBoundsInRadius(rootPart.Position, killRange)
+
+		for _, h in hits do
+			if not h.Parent then
+				continue
+			end
+
+			local hitCharacter = h:FindFirstAncestorOfClass("Model")
+
+			if not hitCharacter then
+				continue
+			end
+
+			if players:GetPlayerFromCharacter(hitCharacter) then
+				continue
+			end
+
+			local hum = hitCharacter:FindFirstChildOfClass("Humanoid")
+
+			if not hum then
+				continue
+			end
+
+			hum.Health = 0
+			hitCharacter:BreakJoints()
+		end
+	end
+end)
+
+----------------------------------------------------------------------------------------
+
+-- Instances:
+
+local Coolkidds1 = Instance.new("ScreenGui")
+local TurnOff = Instance.new("TextButton")
+local UICorner = Instance.new("UICorner")
+local UIShadow = Instance.new("UIShadow")
+local TextLabel = Instance.new("TextLabel")
+
+local ClickSound = Instance.new("Sound")
+local HoverSound = Instance.new("Sound")
+
+--Properties:
+
+Coolkidds1.Name = "Coolkidds!1"
+Coolkidds1.Parent = game.CoreGui
+Coolkidds1.IgnoreGuiInset = true
+Coolkidds1.ResetOnSpawn = false
+Coolkidds1.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+TurnOff.Name = "TurnOff"
+TurnOff.Parent = Coolkidds1
+TurnOff.AnchorPoint = Vector2.new(1, 0.5)
+TurnOff.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TurnOff.BorderColor3 = Color3.fromRGB(0, 0, 0)
+TurnOff.BorderSizePixel = 0
+TurnOff.Position = UDim2.new(1, -20, 0.5, 0)
+TurnOff.Size = UDim2.new(0, 150, 0, 50)
+TurnOff.Font = Enum.Font.Arcade
+TurnOff.Text = "Turn off"
+TurnOff.TextColor3 = Color3.fromRGB(255, 0, 0)
+TurnOff.TextSize = 20.000
+TurnOff.TextStrokeTransparency = 0.000
+TurnOff.TextWrapped = true
+
+UICorner.CornerRadius = UDim.new(1, 0)
+UICorner.Parent = TurnOff
+
+UIShadow.BlurRadius = UDim.new(0, 20)
+UIShadow.Parent = TurnOff
+
+TextLabel.Parent = TurnOff
+TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+TextLabel.BorderSizePixel = 0
+TextLabel.Position = UDim2.new(0.5, 0, 0.0500000007, 0)
+TextLabel.Font = Enum.Font.Arcade
+TextLabel.Text = "Kill Aura"
+TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextLabel.TextSize = 12.000
+TextLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+--
+
+ClickSound.Name = "ClickSound"
+ClickSound.Parent = Coolkidds1
+ClickSound.SoundId = "rbxassetid://88442833509532"
+ClickSound.Volume = 0.5
+
+HoverSound.Name = "HoverSound"
+HoverSound.Parent = Coolkidds1
+HoverSound.SoundId = "rbxassetid://139800881181209"
+HoverSound.Volume = 0.5
+
+local HoverTween = ts:Create(TurnOff, TweenInfo.new(0.5, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(160,60)})
+local ResetTween = ts:Create(TurnOff, TweenInfo.new(0.5, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(150,50)})
+local DownTween = ts:Create(TurnOff, TweenInfo.new(0.5, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(140,40)})
+
+----------------------------------------------------------------------------------------
+
+local chatConnection = plr.Chatted:Connect(function(message)
+	if message == "/e stop" then
+		Stop()
+	end
+end)
+TurnOff.MouseButton1Click:Connect(function ()
+	HoverSound:Play()
+	Stop()
+end)
+
+TurnOff.MouseEnter:Connect(function ()
+	HoverSound:Play()
+	HoverTween:Play()
+end)
+TurnOff.MouseLeave:Connect(function ()
+	ResetTween:Play()
+end)
+TurnOff.MouseButton1Down:Connect(function ()
+	DownTween:Play()
+end)
+
+function Stop()
+	chatConnection:Disconnect()
+	Coolkidds1:Destroy()
+	stopped = true
+end
