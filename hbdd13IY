@@ -156,7 +156,7 @@ if makefolder and isfolder and writefile and isfile then
 	end)
 end
 
-currentVersion = "6.4.2"
+currentVersion = "1.0.0"
 
 ScaledHolder = Instance.new("Frame")
 Scale = Instance.new("UIScale")
@@ -360,7 +360,7 @@ Title.BorderSizePixel = 0
 Title.Size = UDim2.new(0, 250, 0, 20)
 Title.Font = Enum.Font.SourceSans
 Title.TextSize = 18
-Title.Text = "Infinite Yield FE v" .. currentVersion
+Title.Text = "HBDD13's IY v" .. currentVersion
 
 do
 	local emoji = ({
@@ -13310,9 +13310,9 @@ task.spawn(function()
 	end)
 
 	if success then
-		if currentVersion ~= latestVersionInfo.Version then
-			notify("Outdated", "Get the new version at infyiff.github.io")
-		end
+--		if currentVersion ~= latestVersionInfo.Version then
+--			notify("Outdated", "Get the new version at infyiff.github.io")
+--		end
 
 		if latestVersionInfo.Announcement and latestVersionInfo.Announcement ~= "" then
 			local AnnGUI = Instance.new("Frame")
