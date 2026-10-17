@@ -89,6 +89,7 @@ local function createViewport(data)
 	local viewport = Instance.new("ViewportFrame")
 	viewport.Name = "Viewport"
 	viewport.AnchorPoint = Vector2.new(0.5, 0.5)
+	viewport.ZIndex = 100
 	viewport.Position = UDim2.new(
 		0.5, 0, 0,
 		settings.ShowDistance and 79 or 63
