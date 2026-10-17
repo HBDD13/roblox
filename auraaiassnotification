@@ -300,3 +300,5 @@ end
 --// Para usar em qualquer parte deste script:
 -- Aura.Notify("Título", "Mensagem", duração, "success")
 -- Tipos: info, success, warning, error
+
+return Aura
