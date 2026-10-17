@@ -1,4 +1,3 @@
-
 --// AuraESP
 
 local AuraESP = {}
@@ -41,6 +40,9 @@ local DEFAULTS = {
 
 	Animation = true,
 	OffsetY = 0,
+
+	Viewport = false,
+	ViewportSize = 64,
 }
 
 local function getPosition(target)
@@ -52,6 +54,143 @@ local function getPosition(target)
 			or target:FindFirstChildWhichIsA("BasePart", true)
 
 		return root and root.Position
+	end
+end
+
+local function getBounds(target)
+	if target:IsA("BasePart") then
+		return target.CFrame, target.Size
+	elseif target:IsA("Model") then
+		return target:GetBoundingBox()
+	end
+end
+
+local function createViewport(data)
+	local settings = data.Config
+
+	if not settings.Viewport or data.Viewport then
+		return
+	end
+
+	local target = data.Target
+
+	if not target or not target:IsA("Model") and not target:IsA("BasePart") then
+		return
+	end
+
+	local success, clone = pcall(function()
+		return target:Clone()
+	end)
+
+	if not success or not clone then
+		return
+	end
+
+	local viewport = Instance.new("ViewportFrame")
+	viewport.Name = "Viewport"
+	viewport.AnchorPoint = Vector2.new(0.5, 0.5)
+	viewport.Position = UDim2.new(
+		0.5, 0, 0,
+		settings.ShowDistance and 79 or 63
+	)
+	viewport.Size = UDim2.fromOffset(
+		settings.ViewportSize,
+		settings.ViewportSize
+	)
+	viewport.BackgroundTransparency = 1
+	viewport.BorderSizePixel = 0
+	viewport.Ambient = Color3.fromRGB(200, 200, 200)
+	viewport.LightColor = Color3.fromRGB(255, 255, 255)
+	viewport.LightDirection = Vector3.new(-1, -1, -1)
+	viewport.Parent = data.Frame
+
+	local world = Instance.new("WorldModel")
+	world.Name = "World"
+	world.Parent = viewport
+
+	clone.Parent = world
+
+	local camera = Instance.new("Camera")
+	camera.Name = "ViewportCamera"
+	camera.FieldOfView = 50
+	camera.Parent = viewport
+
+	viewport.CurrentCamera = camera
+
+	local successBounds, boundsCFrame, boundsSize = pcall(function()
+		return getBounds(clone)
+	end)
+
+	if successBounds and boundsCFrame and boundsSize then
+		local maxSize = math.max(
+			boundsSize.X,
+			boundsSize.Y,
+			boundsSize.Z,
+			1
+		)
+
+		local distance = (maxSize * 0.5) / math.tan(math.rad(camera.FieldOfView * 0.5)) * 1.2
+		local center = boundsCFrame.Position
+		local direction = boundsCFrame.LookVector
+
+		camera.CFrame = CFrame.lookAt(
+			center + direction * distance,
+			center
+		)
+	end
+
+	data.Viewport = viewport
+	data.ViewportClone = clone
+end
+
+local function removeViewport(data)
+	if data.Viewport then
+		data.Viewport:Destroy()
+		data.Viewport = nil
+		data.ViewportClone = nil
+	end
+end
+
+local function updateLayout(data)
+	local settings = data.Config
+	local viewportEnabled = settings.Viewport and data.Viewport ~= nil
+
+	data.Frame.Size = UDim2.fromOffset(
+		180,
+		viewportEnabled and (settings.ShowDistance and 140 or 124)
+			or (settings.ShowDistance and 56 or 42)
+	)
+
+	data.Name.Position = UDim2.new(
+		0.5, 0, 0,
+		settings.ShowDistance and 27 or 10
+	)
+
+	if data.Distance then
+		data.Distance.Position = UDim2.new(0.5, 0, 0, 10)
+		data.Distance.Visible = settings.ShowDistance
+	end
+
+	local dot = data.Frame:FindFirstChild("Dot")
+
+	if dot then
+		dot.Visible = not viewportEnabled
+		dot.Position = UDim2.new(
+			0.5, 0, 0,
+			settings.ShowDistance and 45 or 28
+		)
+	end
+
+	if data.Viewport then
+		data.Viewport.Position = UDim2.new(
+			0.5, 0, 0,
+			settings.ShowDistance and 79 or 63
+		)
+
+		data.Viewport.Size = UDim2.fromOffset(
+			settings.ViewportSize,
+			settings.ViewportSize
+		)
 	end
 end
 
@@ -150,9 +289,16 @@ function AuraESP.Create(target, name, config)
 		Distance = distanceLabel,
 		Target = target,
 		Config = settings,
+		Viewport = nil,
+		ViewportClone = nil,
 	}
 
 	Markers[target] = data
+
+	if settings.Viewport then
+		createViewport(data)
+		updateLayout(data)
+	end
 
 	return data
 end
@@ -196,7 +342,7 @@ function AuraESP.Update(target, config)
 	local dot = data.Frame:FindFirstChild("Dot")
 
 	if dot then
-		dot.BackgroundColor3 = settings.DotColor
+		dot.BackgroundColor3 = settings.Color or settings.DotColor
 		dot.Size = UDim2.fromOffset(settings.DotSize, settings.DotSize)
 
 		local stroke = dot:FindFirstChildOfClass("UIStroke")
@@ -222,36 +368,20 @@ function AuraESP.Update(target, config)
 
 	if data.Distance then
 		data.Distance.Visible = settings.ShowDistance
-		data.Distance.TextColor3 = settings.DistanceColor
+		data.Distance.TextColor3 = settings.Color or settings.DistanceColor
 		data.Distance.TextSize = settings.DistanceTextSize
 		data.Distance.Font = settings.Font
 		data.Distance.TextStrokeColor3 = settings.OutlineColor
 		data.Distance.TextStrokeTransparency = settings.DistanceStrokeTransparency
-		data.Distance.Position = UDim2.new(0.5, 0, 0, 10)
 	end
 
-	data.Frame.Size = UDim2.fromOffset(
-		180,
-		settings.ShowDistance and 56 or 42
-	)
-
-	data.Name.Position = UDim2.new(
-		0.5, 0, 0,
-		settings.ShowDistance and 27 or 10
-	)
-
-	local dot = data.Frame:FindFirstChild("Dot")
-
-	if dot then
-		dot.Position = UDim2.new(
-			0.5, 0, 0,
-			settings.ShowDistance and 45 or 28
-		)
+	if settings.Viewport then
+		createViewport(data)
+	else
+		removeViewport(data)
 	end
 
-	if not settings.ShowDistance and data.Distance then
-		data.Distance.Visible = false
-	end
+	updateLayout(data)
 end
 
 Connection = RunService.RenderStepped:Connect(function()
