@@ -3,11 +3,8 @@
 
 local AuraESP = {}
 
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-
-local Player = Players.LocalPlayer
 
 local GUI = Instance.new("ScreenGui")
 GUI.Name = "AuraESP"
@@ -19,46 +16,108 @@ GUI.Parent = game:GetService("CoreGui")
 local Markers = {}
 local Connection
 
-local COLORS = {
-	Dot = Color3.fromRGB(190, 155, 255),
-	Text = Color3.fromRGB(245, 242, 255),
-	Outline = Color3.fromRGB(20, 17, 30),
+local DEFAULTS = {
+	DotColor = Color3.fromRGB(190, 155, 255),
+	TextColor = Color3.fromRGB(245, 242, 255),
+	OutlineColor = Color3.fromRGB(20, 17, 30),
+
+	DotSize = 8,
+	TextSize = 12,
+	Font = Enum.Font.GothamSemibold,
+
+	ShowDistance = false,
+	DistanceColor = Color3.fromRGB(190, 155, 255),
+	DistanceTextSize = 11,
+	DistancePrefix = "",
+	DistanceSuffix = "s",
+
+	StrokeColor = Color3.fromRGB(245, 242, 255),
+	StrokeThickness = 1,
+	StrokeTransparency = 0.2,
+
+	TextStrokeTransparency = 0.15,
+	DistanceStrokeTransparency = 0.2,
+
+	Animation = true,
+	OffsetY = 0,
 }
 
-function AuraESP.Create(target, name)
-	if not target or Markers[target] then
+local function getPosition(target)
+	if target:IsA("BasePart") then
+		return target.Position
+	elseif target:IsA("Model") then
+		local root = target.PrimaryPart
+			or target:FindFirstChild("HumanoidRootPart")
+			or target:FindFirstChildWhichIsA("BasePart", true)
+
+		return root and root.Position
+	end
+end
+
+function AuraESP.Create(target, name, config)
+	if not target then
+		return
+	end
+
+	if Markers[target] then
 		return Markers[target]
+	end
+
+	config = config or {}
+
+	local settings = table.clone(DEFAULTS)
+
+	for property, value in config do
+		settings[property] = value
 	end
 
 	local frame = Instance.new("Frame")
 	frame.Name = "ESP"
-	frame.Size = UDim2.fromOffset(150, 42)
+	frame.Size = UDim2.fromOffset(180, settings.ShowDistance and 56 or 42)
 	frame.AnchorPoint = Vector2.new(0.5, 0.5)
 	frame.BackgroundTransparency = 1
 	frame.Visible = false
 	frame.Parent = GUI
 
+	local distanceLabel
+
+	if settings.ShowDistance then
+		distanceLabel = Instance.new("TextLabel")
+		distanceLabel.Name = "Distance"
+		distanceLabel.AnchorPoint = Vector2.new(0.5, 1)
+		distanceLabel.Position = UDim2.new(0.5, 0, 0, 10)
+		distanceLabel.Size = UDim2.new(1, 0, 0, 16)
+		distanceLabel.BackgroundTransparency = 1
+		distanceLabel.Font = settings.Font
+		distanceLabel.TextColor3 = settings.DistanceColor
+		distanceLabel.TextSize = settings.DistanceTextSize
+		distanceLabel.TextStrokeColor3 = settings.OutlineColor
+		distanceLabel.TextStrokeTransparency = settings.DistanceStrokeTransparency
+		distanceLabel.TextTruncate = Enum.TextTruncate.AtEnd
+		distanceLabel.Parent = frame
+	end
+
 	local label = Instance.new("TextLabel")
 	label.Name = "Name"
 	label.AnchorPoint = Vector2.new(0.5, 1)
-	label.Position = UDim2.new(0.5, 0, 0, 10)
+	label.Position = UDim2.new(0.5, 0, 0, settings.ShowDistance and 27 or 10)
 	label.Size = UDim2.new(1, 0, 0, 20)
 	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.GothamSemibold
+	label.Font = settings.Font
 	label.Text = name or target.Name
-	label.TextColor3 = COLORS.Text
-	label.TextSize = 12
-	label.TextStrokeColor3 = COLORS.Outline
-	label.TextStrokeTransparency = 0.15
+	label.TextColor3 = settings.TextColor
+	label.TextSize = settings.TextSize
+	label.TextStrokeColor3 = settings.OutlineColor
+	label.TextStrokeTransparency = settings.TextStrokeTransparency
 	label.TextTruncate = Enum.TextTruncate.AtEnd
 	label.Parent = frame
 
 	local dot = Instance.new("Frame")
 	dot.Name = "Dot"
 	dot.AnchorPoint = Vector2.new(0.5, 0.5)
-	dot.Position = UDim2.new(0.5, 0, 0, 28)
-	dot.Size = UDim2.fromOffset(8, 8)
-	dot.BackgroundColor3 = COLORS.Dot
+	dot.Position = UDim2.new(0.5, 0, 0, settings.ShowDistance and 45 or 28)
+	dot.Size = UDim2.fromOffset(settings.DotSize, settings.DotSize)
+	dot.BackgroundColor3 = settings.DotColor
 	dot.BorderSizePixel = 0
 	dot.Parent = frame
 
@@ -67,27 +126,34 @@ function AuraESP.Create(target, name)
 	corner.Parent = dot
 
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = COLORS.Text
-	stroke.Thickness = 1
-	stroke.Transparency = 0.2
+	stroke.Color = settings.StrokeColor
+	stroke.Thickness = settings.StrokeThickness
+	stroke.Transparency = settings.StrokeTransparency
 	stroke.Parent = dot
 
 	local scale = Instance.new("UIScale")
-	scale.Scale = 0.75
+	scale.Scale = settings.Animation and 0.75 or 1
 	scale.Parent = frame
 
-	TweenService:Create(
-		scale,
-		TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-		{Scale = 1}
-	):Play()
+	if settings.Animation then
+		TweenService:Create(
+			scale,
+			TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{Scale = 1}
+		):Play()
+	end
 
-	Markers[target] = {
+	local data = {
 		Frame = frame,
 		Name = label,
+		Distance = distanceLabel,
+		Target = target,
+		Config = settings,
 	}
 
-	return Markers[target]
+	Markers[target] = data
+
+	return data
 end
 
 function AuraESP.Delete(target)
@@ -107,6 +173,86 @@ function AuraESP.Clear()
 	end
 end
 
+function AuraESP.Update(target, config)
+	local data = Markers[target]
+
+	if not data then
+		return
+	end
+
+	for property, value in config do
+		data.Config[property] = value
+	end
+
+	local settings = data.Config
+
+	data.Name.TextColor3 = settings.TextColor
+	data.Name.TextSize = settings.TextSize
+	data.Name.Font = settings.Font
+	data.Name.TextStrokeColor3 = settings.OutlineColor
+	data.Name.TextStrokeTransparency = settings.TextStrokeTransparency
+
+	local dot = data.Frame:FindFirstChild("Dot")
+
+	if dot then
+		dot.BackgroundColor3 = settings.DotColor
+		dot.Size = UDim2.fromOffset(settings.DotSize, settings.DotSize)
+
+		local stroke = dot:FindFirstChildOfClass("UIStroke")
+
+		if stroke then
+			stroke.Color = settings.StrokeColor
+			stroke.Thickness = settings.StrokeThickness
+			stroke.Transparency = settings.StrokeTransparency
+		end
+	end
+
+	if settings.ShowDistance and not data.Distance then
+		local distance = Instance.new("TextLabel")
+		distance.Name = "Distance"
+		distance.AnchorPoint = Vector2.new(0.5, 1)
+		distance.Position = UDim2.new(0.5, 0, 0, 10)
+		distance.Size = UDim2.new(1, 0, 0, 16)
+		distance.BackgroundTransparency = 1
+		distance.Parent = data.Frame
+
+		data.Distance = distance
+	end
+
+	if data.Distance then
+		data.Distance.Visible = settings.ShowDistance
+		data.Distance.TextColor3 = settings.DistanceColor
+		data.Distance.TextSize = settings.DistanceTextSize
+		data.Distance.Font = settings.Font
+		data.Distance.TextStrokeColor3 = settings.OutlineColor
+		data.Distance.TextStrokeTransparency = settings.DistanceStrokeTransparency
+		data.Distance.Position = UDim2.new(0.5, 0, 0, 10)
+	end
+
+	data.Frame.Size = UDim2.fromOffset(
+		180,
+		settings.ShowDistance and 56 or 42
+	)
+
+	data.Name.Position = UDim2.new(
+		0.5, 0, 0,
+		settings.ShowDistance and 27 or 10
+	)
+
+	local dot = data.Frame:FindFirstChild("Dot")
+
+	if dot then
+		dot.Position = UDim2.new(
+			0.5, 0, 0,
+			settings.ShowDistance and 45 or 28
+		)
+	end
+
+	if not settings.ShowDistance and data.Distance then
+		data.Distance.Visible = false
+	end
+end
+
 Connection = RunService.RenderStepped:Connect(function()
 	local camera = workspace.CurrentCamera
 
@@ -115,17 +261,7 @@ Connection = RunService.RenderStepped:Connect(function()
 	end
 
 	for target, data in Markers do
-		local position
-
-		if target:IsA("BasePart") then
-			position = target.Position
-		elseif target:IsA("Model") then
-			local root = target.PrimaryPart
-				or target:FindFirstChild("HumanoidRootPart")
-				or target:FindFirstChildWhichIsA("BasePart", true)
-
-			position = root and root.Position
-		end
+		local position = getPosition(target)
 
 		if not position or not target:IsDescendantOf(game) then
 			data.Frame.Visible = false
@@ -137,11 +273,21 @@ Connection = RunService.RenderStepped:Connect(function()
 
 		data.Frame.Visible = onScreen and screenPosition.Z > 0
 
-		if data.Frame.Visible then
-			data.Frame.Position = UDim2.fromOffset(
-				screenPosition.X,
-				screenPosition.Y
-			)
+		if not data.Frame.Visible then
+			continue
+		end
+
+		data.Frame.Position = UDim2.fromOffset(
+			screenPosition.X,
+			screenPosition.Y + data.Config.OffsetY
+		)
+
+		if data.Distance then
+			local distance = (camera.CFrame.Position - position).Magnitude
+
+			data.Distance.Text = data.Config.DistancePrefix
+				.. tostring(math.floor(distance + 0.5))
+				.. data.Config.DistanceSuffix
 		end
 	end
 end)
