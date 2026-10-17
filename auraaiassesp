@@ -17,6 +17,7 @@ local Markers = {}
 local Connection
 
 local DEFAULTS = {
+	Color = nil,
 	DotColor = Color3.fromRGB(190, 155, 255),
 	TextColor = Color3.fromRGB(245, 242, 255),
 	OutlineColor = Color3.fromRGB(20, 17, 30),
