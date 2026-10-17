@@ -1,0 +1,302 @@
+--// Examples:
+--   Aura.Notify("Aura", "Notification system loaded.", 4)
+--   Aura.Notify("Success", "Your settings have been saved.", 5, "success")
+--   Aura.Notify("Warning", "Something needs your attention.", 5, "warning")
+--   Aura.Notify("Error", "Something went wrong.", 5, "error")
+
+
+
+
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+local GUI_NAME = "AuraNotifications"
+
+local oldGui = CoreGui:FindFirstChild(GUI_NAME)
+if oldGui then
+	oldGui:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = GUI_NAME
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ResetOnSpawn = false
+ScreenGui.DisplayOrder = 999
+ScreenGui.Parent = CoreGui
+
+local Container = Instance.new("Frame")
+Container.Name = "Notifications"
+Container.AnchorPoint = Vector2.new(1, 0)
+Container.Position = UDim2.new(1, -20, 0, 20)
+Container.Size = UDim2.new(0, 330, 1, -40)
+Container.BackgroundTransparency = 1
+Container.Parent = ScreenGui
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0, 10)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+Layout.VerticalAlignment = Enum.VerticalAlignment.Top
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+Layout.Parent = Container
+
+local Aura = {}
+
+local activeNotifications = {}
+local notificationOrder = 0
+
+local Colors = {
+	Background = Color3.fromRGB(17, 17, 25),
+	Accent = Color3.fromRGB(174, 133, 255),
+	Text = Color3.fromRGB(245, 242, 255),
+	SubText = Color3.fromRGB(160, 155, 180),
+	Success = Color3.fromRGB(130, 255, 190),
+	Error = Color3.fromRGB(255, 115, 135),
+	Warning = Color3.fromRGB(255, 205, 120),
+}
+
+local function Tween(object, duration, properties, style, direction)
+	local tween = TweenService:Create(
+		object,
+		TweenInfo.new(
+			duration,
+			style or Enum.EasingStyle.Quint,
+			direction or Enum.EasingDirection.Out
+		),
+		properties
+	)
+
+	tween:Play()
+	return tween
+end
+
+local function Create(className, properties, parent)
+	local object = Instance.new(className)
+
+	for property, value in properties do
+		object[property] = value
+	end
+
+	object.Parent = parent
+	return object
+end
+
+local function RemoveNotification(notification)
+	if notification.Removing then
+		return
+	end
+
+	notification.Removing = true
+
+	Tween(notification.Scale, 0.25, {
+		Scale = 0.92,
+	})
+
+	Tween(notification.Frame, 0.25, {
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, 35, 0, 0),
+	})
+
+	Tween(notification.Stroke, 0.2, {
+		Transparency = 1,
+	})
+
+	Tween(notification.Title, 0.15, {
+		TextTransparency = 1,
+	})
+
+	Tween(notification.Message, 0.15, {
+		TextTransparency = 1,
+	})
+
+	Tween(notification.Icon, 0.15, {
+		TextTransparency = 1,
+	})
+
+	Tween(notification.Progress, 0.2, {
+		BackgroundTransparency = 1,
+	})
+
+	task.wait(0.27)
+
+	if notification.Frame then
+		notification.Frame:Destroy()
+	end
+
+	for i, item in activeNotifications do
+		if item == notification then
+			table.remove(activeNotifications, i)
+			break
+		end
+	end
+end
+
+function Aura.Notify(title, message, duration, notificationType)
+	title = tostring(title or "Notification")
+	message = tostring(message or "")
+	duration = math.max(tonumber(duration) or 4, 0.5)
+	notificationType = string.lower(tostring(notificationType or "info"))
+
+	notificationOrder += 1
+
+	local accent = Colors.Accent
+	local icon = "✦"
+
+	if notificationType == "success" then
+		accent = Colors.Success
+		icon = "✓"
+	elseif notificationType == "error" then
+		accent = Colors.Error
+		icon = "×"
+	elseif notificationType == "warning" then
+		accent = Colors.Warning
+		icon = "!"
+	end
+
+	local Frame = Create("Frame", {
+		Name = "Notification",
+		Size = UDim2.new(1, 0, 0, 86),
+		BackgroundColor3 = Colors.Background,
+		BackgroundTransparency = 0.08,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		LayoutOrder = notificationOrder,
+		Position = UDim2.new(0, 35, 0, 0),
+	}, Container)
+
+	local Corner = Create("UICorner", {
+		CornerRadius = UDim.new(0, 12),
+	}, Frame)
+
+	local Stroke = Create("UIStroke", {
+		Color = accent,
+		Thickness = 1,
+		Transparency = 0.55,
+	}, Frame)
+
+	local Scale = Create("UIScale", {
+		Scale = 0.92,
+	}, Frame)
+
+	local AccentBar = Create("Frame", {
+		Name = "Accent",
+		Size = UDim2.new(0, 3, 1, -24),
+		Position = UDim2.new(0, 0, 0, 12),
+		BackgroundColor3 = accent,
+		BorderSizePixel = 0,
+	}, Frame)
+
+	Create("UICorner", {
+		CornerRadius = UDim.new(1, 0),
+	}, AccentBar)
+
+	local Icon = Create("TextLabel", {
+		Name = "Icon",
+		Position = UDim2.new(0, 15, 0, 16),
+		Size = UDim2.new(0, 28, 0, 28),
+		BackgroundColor3 = accent,
+		BackgroundTransparency = 0.87,
+		Font = Enum.Font.GothamBold,
+		Text = icon,
+		TextColor3 = accent,
+		TextSize = 17,
+	}, Frame)
+
+	Create("UICorner", {
+		CornerRadius = UDim.new(0, 8),
+	}, Icon)
+
+	local Title = Create("TextLabel", {
+		Name = "Title",
+		Position = UDim2.new(0, 53, 0, 14),
+		Size = UDim2.new(1, -68, 0, 22),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.GothamBold,
+		Text = title,
+		TextColor3 = Colors.Text,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+	}, Frame)
+
+	local Message = Create("TextLabel", {
+		Name = "Message",
+		Position = UDim2.new(0, 53, 0, 37),
+		Size = UDim2.new(1, -68, 0, 27),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.Gotham,
+		Text = message,
+		TextColor3 = Colors.SubText,
+		TextSize = 11,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+	}, Frame)
+
+	local ProgressBackground = Create("Frame", {
+		Name = "ProgressBackground",
+		Position = UDim2.new(0, 13, 1, -5),
+		Size = UDim2.new(1, -26, 0, 2),
+		BackgroundColor3 = Color3.fromRGB(50, 47, 65),
+		BorderSizePixel = 0,
+	}, Frame)
+
+	Create("UICorner", {
+		CornerRadius = UDim.new(1, 0),
+	}, ProgressBackground)
+
+	local Progress = Create("Frame", {
+		Name = "Progress",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = accent,
+		BorderSizePixel = 0,
+	}, ProgressBackground)
+
+	Create("UICorner", {
+		CornerRadius = UDim.new(1, 0),
+	}, Progress)
+
+	local notification = {
+		Frame = Frame,
+		Scale = Scale,
+		Stroke = Stroke,
+		Title = Title,
+		Message = Message,
+		Icon = Icon,
+		Progress = Progress,
+	}
+
+	table.insert(activeNotifications, notification)
+
+	Tween(Scale, 0.45, {
+		Scale = 1,
+	}, Enum.EasingStyle.Back)
+
+	Tween(Frame, 0.45, {
+		Position = UDim2.new(0, 0, 0, 0),
+	}, Enum.EasingStyle.Quint)
+
+	Tween(Progress, duration, {
+		Size = UDim2.new(0, 0, 1, 0),
+	}, Enum.EasingStyle.Linear)
+
+	task.delay(duration, function()
+		RemoveNotification(notification)
+	end)
+
+	return notification
+end
+
+function Aura.Clear()
+	for _, notification in activeNotifications do
+		task.spawn(RemoveNotification, notification)
+	end
+end
+
+--// Para usar em qualquer parte deste script:
+-- Aura.Notify("Título", "Mensagem", duração, "success")
+-- Tipos: info, success, warning, error
