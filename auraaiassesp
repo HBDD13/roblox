@@ -117,7 +117,7 @@ function AuraESP.Create(target, name, config)
 	dot.AnchorPoint = Vector2.new(0.5, 0.5)
 	dot.Position = UDim2.new(0.5, 0, 0, settings.ShowDistance and 45 or 28)
 	dot.Size = UDim2.fromOffset(settings.DotSize, settings.DotSize)
-	dot.BackgroundColor3 = settings.DotColor
+	dot.BackgroundColor3 = settings.Color or settings.DotColor
 	dot.BorderSizePixel = 0
 	dot.Parent = frame
 
@@ -186,7 +186,7 @@ function AuraESP.Update(target, config)
 
 	local settings = data.Config
 
-	data.Name.TextColor3 = settings.TextColor
+	data.Name.TextColor3 = settings.Color or settings.TextColor
 	data.Name.TextSize = settings.TextSize
 	data.Name.Font = settings.Font
 	data.Name.TextStrokeColor3 = settings.OutlineColor
