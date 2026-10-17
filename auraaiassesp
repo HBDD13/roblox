@@ -90,7 +90,7 @@ function AuraESP.Create(target, name, config)
 		distanceLabel.Size = UDim2.new(1, 0, 0, 16)
 		distanceLabel.BackgroundTransparency = 1
 		distanceLabel.Font = settings.Font
-		distanceLabel.TextColor3 = settings.DistanceColor
+		distanceLabel.TextColor3 = settings.Color or settings.DistanceColor
 		distanceLabel.TextSize = settings.DistanceTextSize
 		distanceLabel.TextStrokeColor3 = settings.OutlineColor
 		distanceLabel.TextStrokeTransparency = settings.DistanceStrokeTransparency
