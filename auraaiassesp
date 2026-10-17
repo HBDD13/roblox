@@ -1,5 +1,5 @@
 
---// AuraESP | Standalone Module
+--// AuraESP
 
 local AuraESP = {}
 
@@ -9,131 +9,34 @@ local TweenService = game:GetService("TweenService")
 
 local Player = Players.LocalPlayer
 
---// Configuration
+local GUI = Instance.new("ScreenGui")
+GUI.Name = "AuraESP"
+GUI.IgnoreGuiInset = true
+GUI.ResetOnSpawn = false
+GUI.DisplayOrder = 998
+GUI.Parent = game:GetService("CoreGui")
 
-local CONFIG = {
-	AutoESP = true,
+local Markers = {}
+local Connection
 
-	GuiName = "AuraESP",
-	DisplayOrder = 998,
-
-	Accent = Color3.fromRGB(190, 155, 255),
-	TextColor = Color3.fromRGB(245, 242, 255),
-	OutlineColor = Color3.fromRGB(20, 17, 30),
-
-	Font = Enum.Font.GothamSemibold,
-	TextSize = 12,
-	DotSize = 8,
+local COLORS = {
+	Dot = Color3.fromRGB(190, 155, 255),
+	Text = Color3.fromRGB(245, 242, 255),
+	Outline = Color3.fromRGB(20, 17, 30),
 }
 
---// Entity configuration
---// { InstanceName, DisplayName }
-
-local RULES = {
-	{
-		Parent = "Workspace",
-		Entities = {
-			{"BackdoorLookman", "Lookman"},
-			{"BackdoorRush", "Blitz"},
-
-			{"RushMoving", "Rush"},
-			{"AmbushMoving", "Ambush"},
-
-			{"JeffTheKiller", "Jeff the Killer"},
-
-			{"A60", "A-60"},
-			{"A120", "A-120"},
-
-			{"DronesStampede", "Drones Stampede"},
-			{"BashMoving", "Bash"},
-			{"Alma", "Alma"},
-		},
-	},
-
-	{
-		Parent = "CurrentCamera",
-		Entities = {
-			{"Screech", "Screech"},
-		},
-	},
-}
-
-local gui
-local container
-local updateConnection
-local cameraConnection
-
-local connections = {}
-local markers = {}
-local initialized = false
-
-local function connect(signal, callback)
-	local connection = signal:Connect(callback)
-	table.insert(connections, connection)
-
-	return connection
-end
-
-local function disconnectAll()
-	for _, connection in connections do
-		connection:Disconnect()
-	end
-
-	table.clear(connections)
-end
-
-local function getPosition(entity)
-	if entity:IsA("BasePart") then
-		return entity.Position
-	end
-
-	if entity:IsA("Model") then
-		local root = entity.PrimaryPart
-			or entity:FindFirstChild("HumanoidRootPart")
-			or entity:FindFirstChildWhichIsA("BasePart", true)
-
-		if root then
-			return root.Position
-		end
-	end
-
-	return nil
-end
-
-local function getDisplayName(entity, rules)
-	for _, rule in rules do
-		if entity.Name == rule[1] then
-			return rule[2] or rule[1]
-		end
-	end
-end
-
-local function removeMarker(entity)
-	local data = markers[entity]
-
-	if not data then
-		return
-	end
-
-	markers[entity] = nil
-
-	if data.Frame then
-		data.Frame:Destroy()
-	end
-end
-
-local function createMarker(entity, name)
-	if markers[entity] or not container then
-		return
+function AuraESP.Create(target, name)
+	if not target or Markers[target] then
+		return Markers[target]
 	end
 
 	local frame = Instance.new("Frame")
-	frame.Name = "ESP_" .. name
+	frame.Name = "ESP"
 	frame.Size = UDim2.fromOffset(150, 42)
 	frame.AnchorPoint = Vector2.new(0.5, 0.5)
 	frame.BackgroundTransparency = 1
 	frame.Visible = false
-	frame.Parent = container
+	frame.Parent = GUI
 
 	local label = Instance.new("TextLabel")
 	label.Name = "Name"
@@ -141,11 +44,11 @@ local function createMarker(entity, name)
 	label.Position = UDim2.new(0.5, 0, 0, 10)
 	label.Size = UDim2.new(1, 0, 0, 20)
 	label.BackgroundTransparency = 1
-	label.Font = CONFIG.Font
-	label.Text = name
-	label.TextColor3 = CONFIG.TextColor
-	label.TextSize = CONFIG.TextSize
-	label.TextStrokeColor3 = CONFIG.OutlineColor
+	label.Font = Enum.Font.GothamSemibold
+	label.Text = name or target.Name
+	label.TextColor3 = COLORS.Text
+	label.TextSize = 12
+	label.TextStrokeColor3 = COLORS.Outline
 	label.TextStrokeTransparency = 0.15
 	label.TextTruncate = Enum.TextTruncate.AtEnd
 	label.Parent = frame
@@ -154,8 +57,8 @@ local function createMarker(entity, name)
 	dot.Name = "Dot"
 	dot.AnchorPoint = Vector2.new(0.5, 0.5)
 	dot.Position = UDim2.new(0.5, 0, 0, 28)
-	dot.Size = UDim2.fromOffset(CONFIG.DotSize, CONFIG.DotSize)
-	dot.BackgroundColor3 = CONFIG.Accent
+	dot.Size = UDim2.fromOffset(8, 8)
+	dot.BackgroundColor3 = COLORS.Dot
 	dot.BorderSizePixel = 0
 	dot.Parent = frame
 
@@ -164,7 +67,7 @@ local function createMarker(entity, name)
 	corner.Parent = dot
 
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = CONFIG.TextColor
+	stroke.Color = COLORS.Text
 	stroke.Thickness = 1
 	stroke.Transparency = 0.2
 	stroke.Parent = dot
@@ -173,174 +76,85 @@ local function createMarker(entity, name)
 	scale.Scale = 0.75
 	scale.Parent = frame
 
-	markers[entity] = {
-		Frame = frame,
-	}
-
 	TweenService:Create(
 		scale,
 		TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
 		{Scale = 1}
 	):Play()
 
-	connect(entity.Destroying, function()
-		removeMarker(entity)
-	end)
+	Markers[target] = {
+		Frame = frame,
+		Name = label,
+	}
 
-	connect(entity.AncestryChanged, function(_, parent)
-		if not parent then
-			removeMarker(entity)
-		end
-	end)
+	return Markers[target]
 end
 
-local function watchParent(parent, rules)
-	for _, entity in parent:GetChildren() do
-		local name = getDisplayName(entity, rules)
+function AuraESP.Delete(target)
+	local data = Markers[target]
 
-		if name then
-			createMarker(entity, name)
-		end
+	if not data then
+		return
 	end
 
-	connect(parent.ChildAdded, function(entity)
-		local name = getDisplayName(entity, rules)
-
-		if name then
-			createMarker(entity, name)
-		end
-	end)
+	Markers[target] = nil
+	data.Frame:Destroy()
 end
 
-local function watchCamera()
+function AuraESP.Clear()
+	for target in Markers do
+		AuraESP.Delete(target)
+	end
+end
+
+Connection = RunService.RenderStepped:Connect(function()
 	local camera = workspace.CurrentCamera
 
-	if camera then
-		for _, rule in RULES do
-			if rule.Parent == "CurrentCamera" then
-				watchParent(camera, rule.Entities)
-			end
-		end
-	end
-end
-
-function AuraESP.Init()
-	if initialized then
-		return AuraESP
+	if not camera then
+		return
 	end
 
-	AuraESP.Destroy()
+	for target, data in Markers do
+		local position
 
-	local playerGui = Player:FindFirstChildOfClass("PlayerGui")
+		if target:IsA("BasePart") then
+			position = target.Position
+		elseif target:IsA("Model") then
+			local root = target.PrimaryPart
+				or target:FindFirstChild("HumanoidRootPart")
+				or target:FindFirstChildWhichIsA("BasePart", true)
 
-	if not playerGui then
-		return false
-	end
+			position = root and root.Position
+		end
 
-	gui = Instance.new("ScreenGui")
-	gui.Name = CONFIG.GuiName
-	gui.IgnoreGuiInset = true
-	gui.ResetOnSpawn = false
-	gui.DisplayOrder = CONFIG.DisplayOrder
-	gui.Parent = playerGui
+		if not position or not target:IsDescendantOf(game) then
+			data.Frame.Visible = false
+			continue
+		end
 
-	container = Instance.new("Folder")
-	container.Name = "Markers"
-	container.Parent = gui
+		local screenPosition, onScreen =
+			camera:WorldToViewportPoint(position)
 
-	for _, rule in RULES do
-		if rule.Parent == "Workspace" then
-			watchParent(workspace, rule.Entities)
+		data.Frame.Visible = onScreen and screenPosition.Z > 0
+
+		if data.Frame.Visible then
+			data.Frame.Position = UDim2.fromOffset(
+				screenPosition.X,
+				screenPosition.Y
+			)
 		end
 	end
-
-	watchCamera()
-
-	cameraConnection = workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
-		-- Remove old camera-specific markers and connections are
-		-- managed separately from workspace entity tracking.
-		for entity in markers do
-			if entity.Name == "Screech" then
-				removeMarker(entity)
-			end
-		end
-
-		watchCamera()
-	end)
-
-	updateConnection = RunService.RenderStepped:Connect(function()
-		local camera = workspace.CurrentCamera
-
-		if not camera then
-			return
-		end
-
-		for entity, data in markers do
-			local position = getPosition(entity)
-
-			if not position or not entity:IsDescendantOf(game) then
-				data.Frame.Visible = false
-				continue
-			end
-
-			local screenPosition, onScreen =
-				camera:WorldToViewportPoint(position)
-
-			data.Frame.Visible = onScreen and screenPosition.Z > 0
-
-			if data.Frame.Visible then
-				data.Frame.Position = UDim2.fromOffset(
-					screenPosition.X,
-					screenPosition.Y
-				)
-			end
-		end
-	end)
-
-	initialized = true
-
-	return AuraESP
-end
+end)
 
 function AuraESP.Destroy()
-	initialized = false
+	AuraESP.Clear()
 
-	disconnectAll()
-
-	if updateConnection then
-		updateConnection:Disconnect()
-		updateConnection = nil
+	if Connection then
+		Connection:Disconnect()
+		Connection = nil
 	end
 
-	if cameraConnection then
-		cameraConnection:Disconnect()
-		cameraConnection = nil
-	end
-
-	for entity in markers do
-		removeMarker(entity)
-	end
-
-	table.clear(markers)
-
-	if gui then
-		gui:Destroy()
-		gui = nil
-	end
-
-	container = nil
-end
-
-function AuraESP.SetEnabled(enabled)
-	if enabled then
-		return AuraESP.Init()
-	end
-
-	AuraESP.Destroy()
-end
-
-if CONFIG.AutoESP then
-	task.defer(AuraESP.Init)
+	GUI:Destroy()
 end
 
 return AuraESP
