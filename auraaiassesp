@@ -29,7 +29,7 @@ local DEFAULTS = {
 	DistanceColor = Color3.fromRGB(190, 155, 255),
 	DistanceTextSize = 11,
 	DistancePrefix = "",
-	DistanceSuffix = "s",
+	DistanceSuffix = " studs",
 
 	StrokeColor = Color3.fromRGB(245, 242, 255),
 	StrokeThickness = 1,
